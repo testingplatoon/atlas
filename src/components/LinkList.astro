@@ -1,0 +1,205 @@
+---
+// A list of links with a tag filter on top.
+// Links can be split into groups (for example by category on starred pages).
+// The filter runs in the browser and keeps the chosen tags in the URL (?tags=a,b).
+import type { Link, Site } from '../lib/atlas';
+
+export interface Item {
+  link: Link;
+  site: Site;
+}
+
+export interface Group {
+  heading?: string;
+  headingHref?: string;
+  items: Item[];
+}
+
+interface Props {
+  groups: Group[];
+  emptyText?: string;
+}
+
+const { groups, emptyText = 'No links yet.' } = Astro.props;
+
+// Tag labels come from each link's own site, so ids from two sites can share a chip.
+const labels = new Map<string, string>();
+for (const { items } of groups) {
+  for (const { link, site } of items) {
+    for (const id of link.tags) {
+      if (!labels.has(id)) labels.set(id, site.tags.find((t) => t.id === id)?.label ?? id);
+    }
+  }
+}
+const tags = [...labels].sort((a, b) => a[1].localeCompare(b[1]));
+const total = groups.reduce((n, g) => n + g.items.length, 0);
+const host = (url: string) => new URL(url).host.replace(/^www\./, '');
+---
+{total === 0 ? (
+  <p class="muted">{emptyText}</p>
+) : (
+  <div class="link-list" data-filter-root>
+    {tags.length > 0 && (
+      <div class="filter" role="group" aria-label="Filter by tag">
+        {tags.map(([id, label]) => (
+          <button type="button" class="chip" data-filter-tag={id} aria-pressed="false">{label}</button>
+        ))}
+        <span class="filter-status muted" aria-live="polite">
+          <span data-filter-count>{total} of {total} links</span>
+          <button type="button" class="clear" data-filter-clear hidden>Clear</button>
+        </span>
+      </div>
+    )}
+
+    {groups.map((group) => (
+      <section data-filter-group>
+        {group.heading && (
+          <h2 class="group-heading">
+            {group.headingHref ? <a href={group.headingHref}>{group.heading}</a> : group.heading}
+          </h2>
+        )}
+        <ul class="links">
+          {group.items.map(({ link }) => (
+            <li class="link" data-tags={link.tags.join(' ')}>
+              <div class="link-head">
+                <a href={link.url} rel="noopener">{link.title}</a>
+                {link.starred && <span class="star" title="Starred">★<span class="visually-hidden"> Starred</span></span>}
+                {link.status === 'unverified' && <span class="chip badge-warn" title="Not checked yet">Unverified</span>}
+              </div>
+              <p class="link-desc">{link.description}</p>
+              <div class="link-meta">
+                <span class="muted host">{host(link.url)}</span>
+                {link.tags.map((id) => (
+                  <button type="button" class="chip" data-filter-tag={id} aria-pressed="false">{labels.get(id)}</button>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+
+    <p class="muted" data-filter-empty hidden>No links match these tags.</p>
+  </div>
+)}
+
+<style>
+  .filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 16px 0;
+  }
+  .filter-status {
+    display: inline-flex;
+    gap: 8px;
+    margin-left: 4px;
+    font-size: 0.85rem;
+  }
+  .clear {
+    padding: 0;
+    border: 0;
+    background: none;
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+  }
+  .group-heading {
+    margin: 28px 0 8px;
+    font-size: 1.2rem;
+  }
+  .group-heading a {
+    text-decoration: none;
+  }
+  .links {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .link {
+    padding: 12px 16px;
+  }
+  .link + .link {
+    border-top: 1px solid var(--border);
+  }
+  .link-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    font-weight: 600;
+  }
+  .link-desc {
+    margin: 2px 0 6px;
+  }
+  .link-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  .host {
+    margin-right: 4px;
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+  }
+  [hidden] {
+    display: none !important;
+  }
+</style>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-filter-root]')) {
+    const items = [...root.querySelectorAll<HTMLElement>('li[data-tags]')];
+    const groups = [...root.querySelectorAll<HTMLElement>('[data-filter-group]')];
+    const count = root.querySelector<HTMLElement>('[data-filter-count]');
+    const clear = root.querySelector<HTMLElement>('[data-filter-clear]');
+    const empty = root.querySelector<HTMLElement>('[data-filter-empty]');
+    const known = new Set(items.flatMap((li) => li.dataset.tags!.split(' ')));
+    const params = new URLSearchParams(location.search);
+    const selected = new Set((params.get('tags') ?? '').split(',').filter((t) => known.has(t)));
+
+    function apply() {
+      let shown = 0;
+      for (const li of items) {
+        const tags = li.dataset.tags!.split(' ');
+        const match = [...selected].every((t) => tags.includes(t));
+        li.hidden = !match;
+        if (match) shown++;
+      }
+      for (const group of groups) {
+        group.hidden = !group.querySelector('li[data-tags]:not([hidden])');
+      }
+      for (const chip of root.querySelectorAll<HTMLElement>('[data-filter-tag]')) {
+        chip.setAttribute('aria-pressed', String(selected.has(chip.dataset.filterTag!)));
+      }
+      if (count) count.textContent = `${shown} of ${items.length} links`;
+      if (clear) clear.hidden = selected.size === 0;
+      if (empty) empty.hidden = shown > 0;
+
+      const url = new URL(location.href);
+      if (selected.size) url.searchParams.set('tags', [...selected].join(','));
+      else url.searchParams.delete('tags');
+      history.replaceState(null, '', url);
+    }
+
+    root.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      const chip = target.closest<HTMLElement>('[data-filter-tag]');
+      if (chip) {
+        const tag = chip.dataset.filterTag!;
+        if (selected.has(tag)) selected.delete(tag);
+        else selected.add(tag);
+        apply();
+      } else if (target.closest('[data-filter-clear]')) {
+        selected.clear();
+        apply();
+      }
+    });
+
+    apply();
+  }
+</script>

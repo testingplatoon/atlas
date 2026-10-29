@@ -1,7 +1,47 @@
 ---
 import Base from '../layouts/Base.astro';
 import { hub } from '../config';
+import { getCategories, getSites, href } from '../lib/atlas';
+
+const sites = getSites();
+const categories = await getCategories();
 ---
 <Base title={hub.name}>
   <h1>{hub.name}</h1>
+  <p class="muted">{hub.description}</p>
+
+  <ul class="cards">
+    {sites.map((site) => {
+      const own = categories.filter((c) => c.site.id === site.id);
+      const count = own.reduce((n, c) => n + c.links.length, 0);
+      return (
+        <li style={`--accent: ${site.accent}`}>
+          <div class="card">
+            <h2><a href={href(`${site.id}/`)}>{site.name}</a></h2>
+            <p class="muted">{site.description}</p>
+            <ul class="site-categories">
+              {own.map((c) => (
+                <li><a href={href(`${site.id}/${c.id}/`)}>{c.title}</a></li>
+              ))}
+            </ul>
+            <p class="muted small">{count} links · {own.length} categories</p>
+          </div>
+        </li>
+      );
+    })}
+  </ul>
 </Base>
+
+<style>
+  .site-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 14px;
+    margin: 0 0 10px;
+    padding: 0;
+    list-style: none;
+  }
+  .small {
+    font-size: 0.85rem;
+  }
+</style>

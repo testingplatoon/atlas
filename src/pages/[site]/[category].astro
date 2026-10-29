@@ -1,0 +1,35 @@
+---
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import LinkList from '../../components/LinkList.astro';
+import { getCategories, type Category } from '../../lib/atlas';
+
+export async function getStaticPaths() {
+  const categories = await getCategories();
+  return categories.map((category) => ({
+    params: { site: category.site.id, category: category.id },
+    props: { category },
+  }));
+}
+
+interface Props {
+  category: Category;
+}
+
+const { category } = Astro.props;
+const { site } = category;
+const { Content } = await render(category.intro);
+---
+<Base title={`${category.title} · ${site.name}`} description={category.description} site={site} current={category.id}>
+  <h1>{category.title}</h1>
+  <div class="intro">
+    <Content />
+  </div>
+  <LinkList groups={[{ items: category.links.map((link) => ({ link, site })) }]} />
+</Base>
+
+<style>
+  .intro :global(p) {
+    margin: 0 0 8px;
+  }
+</style>
