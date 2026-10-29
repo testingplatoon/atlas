@@ -1,0 +1,24 @@
+---
+import Base from '../../layouts/Base.astro';
+import LinkList from '../../components/LinkList.astro';
+import { getCategories, getSite, getSites, href } from '../../lib/atlas';
+
+export function getStaticPaths() {
+  return getSites().map((site) => ({ params: { site: site.id } }));
+}
+
+const site = getSite(Astro.params.site);
+const categories = await getCategories(site.id);
+const groups = categories
+  .map((c) => ({
+    heading: c.title,
+    headingHref: href(`${site.id}/${c.id}/`),
+    items: c.links.filter((l) => l.starred).map((link) => ({ link, site })),
+  }))
+  .filter((g) => g.items.length > 0);
+---
+<Base title={`Starred · ${site.name}`} description={`The best ${site.name} links.`} site={site} current="starred">
+  <h1><span class="star">★</span> Starred</h1>
+  <p class="muted">The best {site.name} links, by category.</p>
+  <LinkList groups={groups} emptyText="No starred links yet." />
+</Base>

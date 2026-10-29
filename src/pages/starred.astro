@@ -1,0 +1,19 @@
+---
+import Base from '../layouts/Base.astro';
+import LinkList from '../components/LinkList.astro';
+import { getCategories, href } from '../lib/atlas';
+
+const categories = await getCategories();
+const groups = categories
+  .map((c) => ({
+    heading: `${c.site.name} › ${c.title}`,
+    headingHref: href(`${c.site.id}/${c.id}/`),
+    items: c.links.filter((l) => l.starred).map((link) => ({ link, site: c.site })),
+  }))
+  .filter((g) => g.items.length > 0);
+---
+<Base title="Starred" description="The best links from every site in the hub." current="starred">
+  <h1><span class="star">★</span> Starred</h1>
+  <p class="muted">The best links from every site in the hub.</p>
+  <LinkList groups={groups} emptyText="No starred links yet." />
+</Base>
