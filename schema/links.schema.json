@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://testingplatoon.github.io/atlas/schema/links.schema.json",
+  "title": "Atlas category file",
+  "description": "A list of links for one category. File: data/<site>/<category>.json",
+  "type": "array",
+  "items": { "$ref": "#/$defs/link" },
+  "$defs": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "url", "description", "tags", "category", "starred", "added", "status"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Name of the site or resource."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://",
+          "description": "Full URL, starting with http:// or https://."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300,
+          "description": "One or two short sentences."
+        },
+        "tags": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/slug" },
+          "description": "Tag ids from the site's site.json."
+        },
+        "category": {
+          "$ref": "#/$defs/slug",
+          "description": "Must match the file name, without .json."
+        },
+        "starred": {
+          "type": "boolean",
+          "description": "true for the best links."
+        },
+        "added": {
+          "type": "string",
+          "format": "date",
+          "description": "Date added, YYYY-MM-DD."
+        },
+        "status": {
+          "enum": ["active", "dead", "unverified"],
+          "description": "dead links stay in the data but are hidden on the site."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "$schema": "../../schema/site.schema.json",
+  "name": "Brawl Stars",
+  "description": "Tools, stat trackers, guides, community sites and ranked play resources for Brawl Stars.",
+  "accent": "#f5b400",
+  "order": 1,
+  "tags": [
+    { "id": "official", "label": "Official" },
+    { "id": "stats", "label": "Stats" },
+    { "id": "meta", "label": "Meta" },
+    { "id": "tier-list", "label": "Tier list" },
+    { "id": "brawlers", "label": "Brawlers" },
+    { "id": "maps", "label": "Maps" },
+    { "id": "events", "label": "Events" },
+    { "id": "api", "label": "API" },
+    { "id": "wiki", "label": "Wiki" },
+    { "id": "news", "label": "News" },
+    { "id": "esports", "label": "Esports" },
+    { "id": "ranked", "label": "Ranked" },
+    { "id": "club", "label": "Club" },
+    { "id": "forum", "label": "Forum" },
+    { "id": "discord", "label": "Discord" },
+    { "id": "video", "label": "Video" },
+    { "id": "app", "label": "App" }
+  ]
+}

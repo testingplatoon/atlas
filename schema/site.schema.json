@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://testingplatoon.github.io/atlas/schema/site.schema.json",
+  "title": "Atlas site settings",
+  "description": "Settings for one site in the hub. File: data/<site>/site.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "description", "accent", "order", "tags"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 60 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "accent": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "description": "Accent color for this site, as #rrggbb."
+    },
+    "order": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Position on the hub home page. Lower comes first."
+    },
+    "tags": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The fixed tag list for this site.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+          "label": { "type": "string", "minLength": 1, "maxLength": 30 }
+        }
+      }
+    }
+  }
+}
