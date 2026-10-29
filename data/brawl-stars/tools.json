@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "title": "Brawl Stars API",
+    "url": "https://developer.brawlstars.com/",
+    "description": "Official API for Brawl Stars game data, with near real-time access. You need a developer account and an API key to use it.",
+    "tags": ["api", "official"],
+    "category": "tools",
+    "starred": true,
+    "added": "2026-10-29",
+    "status": "active"
+  }
+]

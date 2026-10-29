@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "title": "Brawl Stars (official page)",
+    "url": "https://supercell.com/en/games/brawlstars/",
+    "description": "Supercell's official Brawl Stars page. It has the latest news, trailer videos, app store links and the official social media accounts.",
+    "tags": ["official", "news", "video"],
+    "category": "community",
+    "starred": true,
+    "added": "2026-10-29",
+    "status": "active"
+  },
+  {
+    "title": "Brawl Stars News Archive",
+    "url": "https://supercell.com/en/games/brawlstars/blog/",
+    "description": "All official Brawl Stars news posts, newest first: release notes, esports updates and community events.",
+    "tags": ["official", "news"],
+    "category": "community",
+    "starred": false,
+    "added": "2026-10-29",
+    "status": "active"
+  }
+]
