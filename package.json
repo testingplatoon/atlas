@@ -1,0 +1,23 @@
+{
+  "name": "atlas",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "validate": "node scripts/validate.mjs",
+    "build": "npm run validate && astro build",
+    "preview": "astro preview",
+    "check-links": "node scripts/check-links.mjs"
+  },
+  "dependencies": {
+    "astro": "^7.4.4",
+    "minisearch": "^7.2.0"
+  },
+  "devDependencies": {
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1"
+  }
+}
