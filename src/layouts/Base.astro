@@ -1,0 +1,169 @@
+---
+import '../styles/global.css';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import { hub } from '../config';
+import { getCategories, href, type Site } from '../lib/atlas';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Set on pages that belong to one site. Gives the accent color and the category menu. */
+  site?: Site;
+  /** Category id to mark as current in the menu. */
+  current?: string;
+}
+
+const { title, description = hub.description, site, current } = Astro.props;
+const accent = site?.accent ?? hub.accent;
+const categories = site ? await getCategories(site.id) : [];
+const starredHref = site ? href(`${site.id}/starred/`) : href('starred/');
+---
+<!doctype html>
+<html lang="en" style={`--accent: ${accent}`}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content={accent} />
+    <title>{title === hub.name ? hub.name : `${title} · ${hub.name}`}</title>
+    <script is:inline>
+      // Apply the saved theme, or the system theme, before the page paints.
+      (function () {
+        var theme;
+        try {
+          theme = localStorage.getItem('atlas-theme');
+        } catch (e) {}
+        if (theme !== 'light' && theme !== 'dark') {
+          theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-row">
+        <nav class="crumbs" aria-label="Site">
+          <a href={href()} class="brand">{hub.name}</a>
+          {site && (
+            <>
+              <span class="muted" aria-hidden="true">/</span>
+              <a href={href(`${site.id}/`)}>{site.name}</a>
+            </>
+          )}
+        </nav>
+        <div class="header-search">
+          <slot name="search" />
+        </div>
+        <div class="header-actions">
+          <a href={starredHref} class="starred-link" aria-current={current === 'starred' ? 'page' : undefined}>
+            <span class="star" aria-hidden="true">★</span> Starred
+          </a>
+          <ThemeToggle />
+        </div>
+      </div>
+      {categories.length > 0 && (
+        <nav class="container category-nav" aria-label={`${site!.name} categories`}>
+          {categories.map((c) => (
+            <a href={href(`${site!.id}/${c.id}/`)} aria-current={current === c.id ? 'page' : undefined}>
+              {c.title}
+            </a>
+          ))}
+        </nav>
+      )}
+    </header>
+
+    <main class="container">
+      <slot />
+    </main>
+
+    <footer class="container site-footer muted">
+      <a href={`${hub.repoUrl}#readme`}>Suggest a link</a>
+      <span aria-hidden="true">·</span>
+      <a href={hub.repoUrl}>Source on GitHub</a>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .site-header {
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .header-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+  }
+  .crumbs a {
+    text-decoration: none;
+  }
+  .brand {
+    color: var(--accent);
+  }
+  .header-search {
+    flex: 1 1 260px;
+    order: 3;
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+  }
+  .starred-link {
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+  .starred-link[aria-current='page'] {
+    font-weight: 600;
+  }
+  @media (min-width: 760px) {
+    .header-search {
+      order: 0;
+      max-width: 420px;
+    }
+    .header-actions {
+      margin-left: 0;
+    }
+  }
+  .category-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+    padding-bottom: 10px;
+    font-size: 0.95rem;
+  }
+  .category-nav a {
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+  }
+  .category-nav a:hover,
+  .category-nav a[aria-current='page'] {
+    color: var(--fg);
+    border-bottom-color: var(--accent);
+  }
+  main {
+    min-height: 60vh;
+    padding-top: 8px;
+    padding-bottom: 40px;
+  }
+  .site-footer {
+    display: flex;
+    gap: 8px;
+    padding-top: 16px;
+    padding-bottom: 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.9rem;
+  }
+</style>

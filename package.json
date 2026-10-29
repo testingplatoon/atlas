@@ -10,14 +10,18 @@
     "validate": "node scripts/validate.mjs",
     "build": "npm run validate && astro build",
     "preview": "astro preview",
-    "check-links": "node scripts/check-links.mjs"
+    "check-links": "node scripts/check-links.mjs",
+    "check": "astro check"
   },
   "dependencies": {
     "astro": "^7.4.4",
     "minisearch": "^7.2.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.12",
+    "@types/node": "^24.19.2",
     "ajv": "^8.20.0",
-    "ajv-formats": "^3.0.1"
+    "ajv-formats": "^3.0.1",
+    "typescript": "^6.0.3"
   }
 }

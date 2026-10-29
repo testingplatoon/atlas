@@ -1,0 +1,41 @@
+---
+// Switches between light and dark. The choice is saved in localStorage.
+// The inline script in Base.astro applies the saved choice before the page paints.
+---
+<button class="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme">
+  <span class="icon-light" aria-hidden="true">☀</span>
+  <span class="icon-dark" aria-hidden="true">☾</span>
+</button>
+
+<style>
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    font-size: 1.05rem;
+  }
+  .theme-toggle:hover {
+    border-color: var(--accent);
+  }
+  :global(:root[data-theme='dark']) .icon-dark,
+  :global(:root:not([data-theme='dark'])) .icon-light {
+    display: none;
+  }
+</style>
+
+<script>
+  for (const button of document.querySelectorAll('.theme-toggle')) {
+    button.addEventListener('click', () => {
+      const root = document.documentElement;
+      const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      root.dataset.theme = next;
+      try {
+        localStorage.setItem('atlas-theme', next);
+      } catch {
+        // Storage can be blocked. The theme still changes for this page.
+      }
+    });
+  }
+</script>
