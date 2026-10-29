@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import Search from '../components/Search.astro';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import { hub } from '../config';
 import { getCategories, href, type Site } from '../lib/atlas';
@@ -53,7 +54,7 @@ const starredHref = site ? href(`${site.id}/starred/`) : href('starred/');
           )}
         </nav>
         <div class="header-search">
-          <slot name="search" />
+          <Search />
         </div>
         <div class="header-actions">
           <a href={starredHref} class="starred-link" aria-current={current === 'starred' ? 'page' : undefined}>

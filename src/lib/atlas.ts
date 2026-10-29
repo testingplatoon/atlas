@@ -40,6 +40,21 @@ export interface Category {
   links: Link[];
 }
 
+/** One link in search-index.json. */
+export interface SearchDoc {
+  id: number;
+  title: string;
+  url: string;
+  description: string;
+  /** Tag labels, joined with spaces so they can be searched as text. */
+  tags: string;
+  starred: boolean;
+  unverified: boolean;
+  site: string;
+  category: string;
+  categoryHref: string;
+}
+
 const siteFiles = import.meta.glob<Omit<Site, 'id'>>('/data/*/site.json', {
   eager: true,
   import: 'default',

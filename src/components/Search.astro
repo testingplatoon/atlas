@@ -1,0 +1,192 @@
+---
+// Search box for all links on all sites.
+// It downloads search-index.json on first use and searches it in the browser with MiniSearch.
+// Press "/" anywhere to jump to the box.
+import { href } from '../lib/atlas';
+---
+<div class="search" data-search data-index-url={href('search-index.json')}>
+  <label for="search-input" class="visually-hidden">Search all links</label>
+  <input
+    id="search-input"
+    type="search"
+    placeholder="Search all links  ( / )"
+    autocomplete="off"
+    spellcheck="false"
+    aria-controls="search-results"
+  />
+  <div id="search-results" class="results" hidden>
+    <p class="results-status muted" aria-live="polite"></p>
+    <ul></ul>
+  </div>
+</div>
+
+<style>
+  .search {
+    position: relative;
+  }
+  input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--fg);
+    font: inherit;
+  }
+  input:focus {
+    border-color: var(--accent);
+    outline: none;
+  }
+  .results {
+    position: absolute;
+    z-index: 10;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    max-height: 70vh;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+  }
+  .results[hidden] {
+    display: none;
+  }
+  .results-status {
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .results :global(li) {
+    border-top: 1px solid var(--border);
+  }
+  .results :global(.result) {
+    display: block;
+    padding: 8px 12px;
+    text-decoration: none;
+  }
+  .results :global(.result:hover),
+  .results :global(.result:focus) {
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    outline: none;
+  }
+  .results :global(.result-title) {
+    font-weight: 600;
+  }
+  .results :global(.result-where),
+  .results :global(.result-desc) {
+    display: block;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+</style>
+
+<script>
+  import MiniSearch from 'minisearch';
+  import type { SearchDoc } from '../lib/atlas';
+
+  const MAX_RESULTS = 20;
+
+  for (const box of document.querySelectorAll<HTMLElement>('[data-search]')) {
+    const input = box.querySelector('input')!;
+    const panel = box.querySelector<HTMLElement>('.results')!;
+    const status = panel.querySelector<HTMLElement>('.results-status')!;
+    const list = panel.querySelector('ul')!;
+    let index: Promise<MiniSearch<SearchDoc>> | undefined;
+
+    function load() {
+      index ??= fetch(box.dataset.indexUrl!)
+        .then((res) => res.json() as Promise<SearchDoc[]>)
+        .then((docs) => {
+          const search = new MiniSearch<SearchDoc>({
+            fields: ['title', 'description', 'tags', 'site', 'category'],
+            storeFields: ['title', 'url', 'description', 'starred', 'unverified', 'site', 'category', 'categoryHref'],
+            searchOptions: { boost: { title: 3, tags: 2 }, prefix: true, fuzzy: 0.2, combineWith: 'AND' },
+          });
+          search.addAll(docs);
+          return search;
+        });
+      return index;
+    }
+
+    function item(doc: SearchDoc) {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.className = 'result';
+      a.href = doc.url;
+      a.rel = 'noopener';
+      const title = document.createElement('span');
+      title.className = 'result-title';
+      title.textContent = doc.title + (doc.starred ? ' ★' : '') + (doc.unverified ? ' (unverified)' : '');
+      const where = document.createElement('span');
+      where.className = 'result-where';
+      where.textContent = `${doc.site} › ${doc.category}`;
+      const desc = document.createElement('span');
+      desc.className = 'result-desc';
+      desc.textContent = doc.description;
+      a.append(title, where, desc);
+      li.append(a);
+      return li;
+    }
+
+    async function update() {
+      const query = input.value.trim();
+      if (!query) {
+        panel.hidden = true;
+        return;
+      }
+      const search = await load();
+      if (query !== input.value.trim()) return; // A newer keystroke will update.
+      const results = search.search(query) as unknown as SearchDoc[];
+      list.replaceChildren(...results.slice(0, MAX_RESULTS).map(item));
+      status.textContent =
+        results.length === 0
+          ? 'No links found.'
+          : results.length > MAX_RESULTS
+            ? `Showing ${MAX_RESULTS} of ${results.length} links. Add words to narrow the search.`
+            : `${results.length} link${results.length === 1 ? '' : 's'} found.`;
+      panel.hidden = false;
+    }
+
+    input.addEventListener('focus', () => {
+      load();
+      if (input.value.trim()) panel.hidden = false;
+    });
+    input.addEventListener('input', update);
+
+    // Arrow keys move between results; Escape closes the panel.
+    box.addEventListener('keydown', (event) => {
+      const links = [...list.querySelectorAll<HTMLElement>('.result')];
+      const at = links.indexOf(document.activeElement as HTMLElement);
+      if (event.key === 'ArrowDown' && links.length) {
+        event.preventDefault();
+        links[Math.min(at + 1, links.length - 1)].focus();
+      } else if (event.key === 'ArrowUp' && links.length) {
+        event.preventDefault();
+        if (at <= 0) input.focus();
+        else links[at - 1].focus();
+      } else if (event.key === 'Escape') {
+        panel.hidden = true;
+        input.focus();
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!box.contains(event.target as Node)) panel.hidden = true;
+    });
+
+    document.addEventListener('keydown', (event) => {
+      const typing = (event.target as HTMLElement).closest('input, textarea, select, [contenteditable]');
+      if (event.key === '/' && !typing) {
+        event.preventDefault();
+        input.focus();
+      }
+    });
+  }
+</script>
