@@ -1,0 +1,40 @@
+# Checks every URL once a week. If a person needs to act, it opens an issue
+# labeled "link-check", or updates the one that is already open.
+# It never edits data files.
+name: Weekly link check
+
+on:
+  schedule:
+    - cron: '23 5 * * 1' # Mondays 05:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - id: check
+        run: npm run check-links -- --output link-report.md --no-fail
+      - name: Open or update the report issue
+        if: steps.check.outputs.findings != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh label create link-check --color d73a4a --description "Weekly link check report" --force
+          number=$(gh issue list --label link-check --state open --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file link-report.md
+            gh issue comment "$number" --body "Report updated on $(date -u +%F)."
+          else
+            gh issue create --title "Link check report" --label link-check --body-file link-report.md
+          fi
